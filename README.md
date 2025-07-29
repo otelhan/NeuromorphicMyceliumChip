@@ -1,8 +1,10 @@
-# NeuromorphicMyceliumChip
+# Neuromorphic Mycelium Chip
 
-A research project demonstrating neuromorphic computing using mycelium networks for reservoir computing and color classification tasks.
+We introduce a neuromorphic computing substrate based on PEDOT:PSS-infused mycelium, a biofabricated, morphologically tunable material that can be engineered into electrically active components including resistors, capacitors, and diode-like elements. Leveraging the principles of physical reservoir computing, we demonstrate that mycelium networks grown under controlled environmental conditions can transform time-varying inputs into nonlinear, high-dimensional state trajectories, enabling machine learning tasks such as NARMA-10 sequence prediction. 
 
-## 🧠 Overview
+## Overview
+
+<img src="./images/mycelium_compute_chip_v2.jpg" alt="Mycelium Computer Chip" height="300" width="400">
 
 This project implements neuromorphic computing systems using mycelium networks as biological substrates for:
 - **NARMA-10 Reservoir Computing**: Time-series prediction using mycelium as a reservoir
@@ -19,7 +21,7 @@ This project implements neuromorphic computing systems using mycelium networks a
 
 ### Key Achievements
 - **NARMA-10 Benchmark**: Successfully trained mycelium networks for time-series prediction
-- **Color Classification**: 7-color recognition system with >90% accuracy
+- **Color Classification**: 7-color recognition system with ~21-35% accuracy (Random Forest)
 - **Memory Analysis**: Quantified temporal memory effects in mycelium
 - **Hardware Integration**: Real-time voltage control and measurement
 
@@ -105,18 +107,21 @@ chmod +x run_predictor.sh
 - **Training Samples**: 750+ samples per model
 - **Test Performance**: 200+ test samples
 - **Model Optimization**: Multiple iterations with parameter tuning
-- **Results**: Successful time-series prediction using mycelium reservoir
+- **Results**: Training RMSE 0.077, Test RMSE 0.117 (excellent performance)
+- **Method**: Random Forest regression with nonlinear feature transformations
 
 ### Color Classification Performance
 - **Colors**: RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET
-- **Accuracy**: >90% classification accuracy
+- **Accuracy**: ~21-35% classification accuracy (Random Forest), ~17-25% (Ridge)
 - **Modes**: Single sample and sequential presentation
 - **Robustness**: Noise tolerance and temporal stability
+- **Note**: Performance varies with experimental conditions and mycelium state
 
 ### Memory Characterization
-- **Temporal Memory**: Quantified memory duration and decay
+- **Temporal Memory**: 3-17% improvement using input history
 - **Response Dynamics**: Step response and autocorrelation analysis
-- **State Prediction**: Predictive modeling of mycelium behavior
+- **State Prediction**: Predictive modeling with input history
+- **Settling Time**: ~1-3 seconds average response time
 
 ## 🛠️ Technical Details
 
