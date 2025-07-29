@@ -104,11 +104,14 @@ chmod +x run_predictor.sh
 ## 📊 Results
 
 ### NARMA-10 Performance
-- **Training Samples**: 750+ samples per model
+- **Training Samples**: 1,000 samples per model
 - **Test Performance**: 200+ test samples
 - **Model Optimization**: Multiple iterations with parameter tuning
-- **Results**: Training RMSE 0.077, Test RMSE 0.117 (excellent performance)
-- **Method**: Random Forest regression with nonlinear feature transformations
+- **Results**: 
+  - **Ridge Regression**: Training RMSE 0.119, Test RMSE 0.102 (best performance)
+  - **Random Forest**: Training RMSE 0.096, Test RMSE 0.197
+- **Method**: Ridge regression with normalization and Random Forest with nonlinear feature transformations
+- **Features**: Reservoir state, squared state, and trigonometric expansions (sin(state×3), cos(state×2))
 
 ### Color Classification Performance
 - **Colors**: RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET
@@ -118,10 +121,12 @@ chmod +x run_predictor.sh
 - **Note**: Performance varies with experimental conditions and mycelium state
 
 ### Memory Characterization
-- **Temporal Memory**: 3-17% improvement using input history
+- **Temporal Memory**: R² improvement of 0.1-0.3 when historical inputs included
 - **Response Dynamics**: Step response and autocorrelation analysis
 - **State Prediction**: Predictive modeling with input history
-- **Settling Time**: ~1-3 seconds average response time
+- **Settling Time**: ~100ms (one sample interval at optimal timing)
+- **Autocorrelation**: Strong correlation (r > 0.5) at lags of 1-3 samples
+- **Cross-correlation**: Significant correlation (|r| > 0.3) between past inputs and current states
 
 ## 🛠️ Technical Details
 
