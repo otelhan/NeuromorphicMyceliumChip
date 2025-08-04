@@ -8,20 +8,17 @@ We introduce a neuromorphic computing substrate based on PEDOT:PSS-infused mycel
 
 This project implements neuromorphic computing systems using mycelium networks as biological substrates for:
 - **NARMA-10 Reservoir Computing**: Time-series prediction using mycelium as a reservoir
-- **Color Classification**: Real-time color recognition using mycelium networks
 - **Temporal Memory Analysis**: Characterization of mycelium's memory capabilities
 
 ## 🔬 Research Contributions
 
 ### Neuromorphic Computing with Mycelium
 - First demonstration of mycelium-based reservoir computing
-- Real-time color classification using biological substrates
 - Temporal memory characterization in mycelium networks
 - Hardware-software integration with Digilent devices
 
 ### Key Achievements
 - **NARMA-10 Benchmark**: Successfully trained mycelium networks for time-series prediction
-- **Color Classification**: 7-color recognition system with ~21-35% accuracy (Random Forest)
 - **Memory Analysis**: Quantified temporal memory effects in mycelium
 - **Hardware Integration**: Real-time voltage control and measurement
 
@@ -31,13 +28,10 @@ This project implements neuromorphic computing systems using mycelium networks a
 NeuromorphicMyceliumChip/
 ├── src/                          # Core implementation
 │   ├── mycelium_narma10.py      # NARMA-10 reservoir computing
-│   ├── mycelium_color_classifier.py  # Color classification system
 │   ├── mycelium_memory_test.py  # Memory analysis tools
-│   ├── myColorPredictor.py      # Color prediction interface
 │   └── cleanup_devices.py       # Device management utilities
 ├── data/                         # Sample data files
-│   ├── sample_narma_results.csv # NARMA-10 experimental results
-│   └── sample_color_data.csv    # Color classification data
+│   └── sample_narma_results.csv # NARMA-10 experimental results
 ├── docs/                         # Documentation
 ├── tests/                        # Test files
 ├── examples/                     # Usage examples
@@ -79,10 +73,7 @@ chmod +x run_predictor.sh
 ./run_predictor.sh src/mycelium_narma10.py
 ```
 
-#### Color Classification
-```bash
-./run_predictor.sh src/mycelium_color_classifier.py
-```
+
 
 #### Memory Analysis
 ```bash
@@ -113,12 +104,7 @@ chmod +x run_predictor.sh
 - **Method**: Ridge regression with normalization and Random Forest with nonlinear feature transformations
 - **Features**: Reservoir state, squared state, and trigonometric expansions (sin(state×3), cos(state×2))
 
-### Color Classification Performance
-- **Colors**: RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET
-- **Accuracy**: ~21-35% classification accuracy (Random Forest), ~17-25% (Ridge)
-- **Modes**: Single sample and sequential presentation
-- **Robustness**: Noise tolerance and temporal stability
-- **Note**: Performance varies with experimental conditions and mycelium state
+
 
 ### Memory Characterization
 - **Temporal Memory**: R² improvement of 0.1-0.3 when historical inputs included
@@ -138,7 +124,6 @@ chmod +x run_predictor.sh
 
 ### Key Algorithms
 - **Reservoir Computing**: Mycelium as nonlinear dynamical system
-- **Random Forest Classification**: For color classification
 - **Ridge Regression**: For NARMA-10 prediction
 - **t-SNE Visualization**: High-dimensional state analysis
 
@@ -151,13 +136,7 @@ chmod +x run_predictor.sh
 4. Train readout layer (Ridge regression)
 5. Evaluate prediction performance
 
-### Color Classification
-1. Define RGB color space (7 colors)
-2. Convert colors to voltage signals
-3. Apply sequential voltage patterns
-4. Record mycelium state responses
-5. Train Random Forest classifier
-6. Evaluate classification accuracy
+
 
 ### Memory Analysis
 1. Apply step response tests
