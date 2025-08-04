@@ -119,7 +119,7 @@ The repository includes comprehensive experimental data from our neuromorphic my
 - Memory test files contain time-series data for temporal analysis
 
 ### NARMA-10 Performance
-- **Training Samples**: 1,000 samples per model
+- **Training Samples**: 500 and 1,000 samples per model
 - **Test Performance**: Multiple independent test experiments
 - **Model Optimization**: Multiple iterations with parameter tuning
 - **Results**: 
@@ -127,7 +127,7 @@ The repository includes comprehensive experimental data from our neuromorphic my
   - **Random Forest**: Training RMSE 0.096, Test RMSE 0.197
 - **Method**: Ridge regression with normalization and Random Forest with nonlinear feature transformations
 - **Features**: Reservoir state, squared state, and trigonometric expansions (sin(state×3), cos(state×2))
-- **Hardware**: 3 reservoirs (locations A1, A4, A6) across 3 chips
+- **Hardware**: 3 reservoirs (locations A1, A4, A6) across 1 chip
 - **Note**: First demonstration of temporal computing in biodegradable, agriculturally scalable substrate
 
 
@@ -189,7 +189,7 @@ The repository includes comprehensive experimental data from our neuromorphic my
 ## 🔬 Research Significance
 
 This project demonstrates that mycelium networks can serve as effective substrates for neuromorphic computing, providing:
-- **Biological Computing**: Natural nonlinear dynamics
+- **Reservoir Computing**: PEDOT:PSS-based nonlinear dynamics
 - **Temporal Memory**: Inherent memory capabilities
 - **Scalability**: Network growth and adaptation
 - **Sustainability**: Biodegradable computing substrates
