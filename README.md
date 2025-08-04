@@ -31,7 +31,11 @@ NeuromorphicMyceliumChip/
 │   ├── mycelium_memory_test.py  # Memory analysis tools
 │   └── cleanup_devices.py       # Device management utilities
 ├── data/                         # Sample data files
-│   └── sample_narma_results.csv # NARMA-10 experimental results
+│   ├── sample_narma_results.csv # NARMA-10 experimental results
+│   ├── narma10_results_*.csv    # Multiple NARMA-10 test runs
+│   ├── memory_test_step_response_test_*.csv # Step response data
+│   ├── memory_test_random_input_*.csv # Random input memory data
+│   └── memory_test_sine_wave_test_*.csv # Sine wave memory data
 ├── docs/                         # Documentation
 ├── tests/                        # Test files
 ├── examples/                     # Usage examples
@@ -97,6 +101,23 @@ chmod +x run_predictor.sh
 
 ## 📊 Results
 
+### Available Experimental Data
+The repository includes comprehensive experimental data from our neuromorphic mycelium computing experiments:
+
+**NARMA-10 Data:**
+- `narma10_results_*.csv`: Multiple test runs with input, state, target, and prediction columns
+- Contains 200+ samples per experiment with Ridge and Random Forest predictions
+
+**Memory Characterization Data:**
+- `memory_test_step_response_test_*.csv`: Step input response data (time, input, state)
+- `memory_test_random_input_*.csv`: Random pulse input memory data
+- `memory_test_sine_wave_test_*.csv`: Sine wave input temporal dynamics
+
+**Data Format:**
+- All CSV files include timestamps, input signals, and mycelium state responses
+- NARMA-10 files include both true targets and model predictions
+- Memory test files contain time-series data for temporal analysis
+
 ### NARMA-10 Performance
 - **Training Samples**: 1,000 samples per model
 - **Test Performance**: Multiple independent test experiments
@@ -115,7 +136,7 @@ chmod +x run_predictor.sh
 - **Temporal Memory**: R² improvement of 0.026-0.034 with historical inputs
 - **Response Dynamics**: Step response, autocorrelation, and cross-correlation analysis
 - **State Prediction**: Predictive modeling with input history
-- **Settling Time**: ~100ms (sub-second response time)
+- **Settling Time**: 0.1-1s
 - **Input Types**: Step signals, random pulses, and sine waves
 - **Hardware**: 3 reservoirs tested across multiple input patterns
 
@@ -191,8 +212,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - DARPA for research funding
-- Digilent for hardware support
-- Research collaborators and advisors
 
 ---
 
