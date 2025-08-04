@@ -84,35 +84,54 @@ chmod +x run_predictor.sh
 
 ### Digilent Devices
 - **Device 1**: Analog Discovery 2 (AD2) for voltage control and measurement
-- **Device 2**: Second Digilent device for additional voltage control
+- **Device 2**: Analog Discovery 3 for additional voltage control
 - **Connection**: USB connection to both devices
+- **Channels**: 16 independent input channels operating in parallel
 
 ### Mycelium Setup
 - **Substrate**: Mycelium network on appropriate growth medium
 - **Electrodes**: Conductive electrodes for voltage application and measurement
 - **Environment**: Controlled humidity and temperature conditions
+- **Carrier Board**: Analog interface with 4x gain amplification (0-5V to 16-18V)
+- **Reservoirs**: 3 reservoirs (locations A1, A4, A6) across 3 chips
 
 ## 📊 Results
 
 ### NARMA-10 Performance
 - **Training Samples**: 1,000 samples per model
-- **Test Performance**: 200+ test samples
+- **Test Performance**: Multiple independent test experiments
 - **Model Optimization**: Multiple iterations with parameter tuning
 - **Results**: 
-  - **Ridge Regression**: Training RMSE 0.119, Test RMSE 0.102 (best performance)
+  - **Ridge Regression**: RMSE 0.102-0.106 (NRMSE 1.01-1.07)
   - **Random Forest**: Training RMSE 0.096, Test RMSE 0.197
 - **Method**: Ridge regression with normalization and Random Forest with nonlinear feature transformations
 - **Features**: Reservoir state, squared state, and trigonometric expansions (sin(state×3), cos(state×2))
+- **Hardware**: 3 reservoirs (locations A1, A4, A6) across 3 chips
+- **Note**: First demonstration of temporal computing in biodegradable, agriculturally scalable substrate
 
 
 
 ### Memory Characterization
-- **Temporal Memory**: R² improvement of 0.1-0.3 when historical inputs included
-- **Response Dynamics**: Step response and autocorrelation analysis
+- **Temporal Memory**: R² improvement of 0.026-0.034 with historical inputs
+- **Response Dynamics**: Step response, autocorrelation, and cross-correlation analysis
 - **State Prediction**: Predictive modeling with input history
-- **Settling Time**: ~100ms (one sample interval at optimal timing)
-- **Autocorrelation**: Strong correlation (r > 0.5) at lags of 1-3 samples
-- **Cross-correlation**: Significant correlation (|r| > 0.3) between past inputs and current states
+- **Settling Time**: ~100ms (sub-second response time)
+- **Input Types**: Step signals, random pulses, and sine waves
+- **Hardware**: 3 reservoirs tested across multiple input patterns
+
+#### Detailed Memory Results
+**Step Input**: 
+- Autocorrelation: 0.85 (lag=6s), Cross-correlation: 1.0 (lag=0s)
+- R²: 0.74 (no improvement with history)
+- Settling time: 0.6s
+
+**Random Input (1.1-3.49V)**:
+- Autocorrelation: 0.20 (lag=0.3s), Cross-correlation: 1.0 (lag=0s)
+- R² improvement: 0.577 → 0.611 (+0.034)
+
+**Sine Wave Input (1.2-3.5V)**:
+- Autocorrelation: 0.497 (lag=1s), Cross-correlation: 0.689 (lag=1s)
+- R² improvement: 0.4745 → 0.5005 (+0.026)
 
 ## 🛠️ Technical Details
 
@@ -130,19 +149,21 @@ chmod +x run_predictor.sh
 ## 📈 Experimental Protocol
 
 ### NARMA-10 Training
-1. Generate NARMA-10 input sequences
-2. Apply voltage signals to mycelium network
-3. Record mycelium state responses
-4. Train readout layer (Ridge regression)
-5. Evaluate prediction performance
+1. Generate 1,000 NARMA-10 training samples
+2. Apply voltage signals (0-5V range) to 3 reservoirs (A1, A4, A6)
+3. Record mycelium state responses from summed output channels
+4. Create feature representations (raw state, squared state, trigonometric expansions)
+5. Train Ridge regression and Random Forest models
+6. Evaluate prediction performance across multiple experiments
 
 
 
 ### Memory Analysis
-1. Apply step response tests
-2. Measure autocorrelation functions
-3. Analyze cross-correlation patterns
-4. Characterize temporal memory effects
+1. Apply three input types: step signals, random pulses, sine waves
+2. Measure autocorrelation and cross-correlation metrics
+3. Analyze temporal dynamics across three reservoirs
+4. Quantify settling time and memory retention
+5. Evaluate R² improvement with historical inputs
 
 ## 🔬 Research Significance
 
