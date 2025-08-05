@@ -1,6 +1,8 @@
 # Neuromorphic Mycelium Chip
 
-We introduce a neuromorphic computing substrate based on PEDOT:PSS-infused mycelium, a biofabricated, morphologically tunable material that can be engineered into electrically active components including resistors, capacitors, and diode-like elements. Leveraging the principles of physical reservoir computing, we demonstrate that mycelium networks grown under controlled environmental conditions can transform time-varying inputs into nonlinear, high-dimensional state trajectories, enabling machine learning tasks such as NARMA-10 sequence prediction. 
+We introduce a neuromorphic computing substrate based on PEDOT:PSS-infused mycelium, a biofabricated, morphologically tunable material that can be engineered into electrically active components including resistors, capacitors, and diode-like elements. Leveraging the principles of physical reservoir computing, we demonstrate that mycelium networks grown under controlled environmental conditions can transform time-varying inputs into nonlinear, high-dimensional state trajectories, enabling machine learning tasks such as NARMA-10 sequence prediction.
+
+*For detailed experimental methods and results, see the primary research paper: `telhan_morph_tuned_mycelium_chip_Aug4.pdf`* 
 
 ## Overview
 
@@ -40,7 +42,8 @@ NeuromorphicMyceliumChip/
 ├── tests/                        # Test files
 ├── examples/                     # Usage examples
 ├── requirements.txt              # Python dependencies
-└── run_predictor.sh             # Environment setup script
+├── run_predictor.sh             # Environment setup script
+└── telhan_morph_tuned_mycelium_chip_Aug4.pdf  # Primary research paper
 ```
 
 ## 🚀 Quick Start
@@ -196,6 +199,10 @@ This project demonstrates that mycelium networks can serve as effective substrat
 
 ## 📚 References
 
+### Primary Research Paper
+- **Telhan, O. et al.** (2025). Morphologically Tuned Mycelium Chip for Neuromorphic Computing. *Available in this repository as* `telhan_morph_tuned_mycelium_chip_Aug4.pdf`
+
+### Background Literature
 - Reservoir Computing principles
 - NARMA-10 benchmark task
 - Mycelium network properties
