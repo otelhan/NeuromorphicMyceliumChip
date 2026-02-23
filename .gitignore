@@ -1,1 +1,8 @@
 # Python
+
+# Test data folder
+test_data/
+
+# Extended NARMA-10 versions (experimental/development)
+src/mycelium_narma10_extended.py
+src/mycelium_narma10_extended2.py

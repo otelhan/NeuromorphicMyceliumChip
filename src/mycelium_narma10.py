@@ -12,7 +12,7 @@ import os
 from ctypes import c_int, c_double, c_uint, byref, create_string_buffer, cdll
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 import pickle
 from datetime import datetime
 from matplotlib.backends.backend_pdf import PdfPages
@@ -90,11 +90,17 @@ class MyceliumNarma10App(QMainWindow):
         self.test_len = 200
         self.washout = 100
         self.alpha = 0.3
-        self.delay_ms = 100
+        self.delay_ms = 300
         
         # Random Forest parameters
         self.n_estimators = 100
         self.max_depth = 10
+        
+        # Extended readout parameters (defaults preserve baseline behavior)
+        self.use_state_taps = False
+        self.n_state_taps = 10
+        self.input_v_min = 1.0  # Default matches current behavior
+        self.input_v_max = 5.0  # Default matches current behavior
         
         # Data storage
         self.inputs = []
@@ -193,7 +199,7 @@ class MyceliumNarma10App(QMainWindow):
         param_layout.addWidget(QLabel("Sample Delay (ms):"), 6, 0)
         self.delay_spin = QSpinBox()
         self.delay_spin.setRange(10, 1000)
-        self.delay_spin.setValue(self.delay_ms)
+        self.delay_spin.setValue(self.delay_ms)  # Default: 300ms
         self.delay_spin.setSingleStep(10)
         param_layout.addWidget(self.delay_spin, 6, 1)
         
@@ -244,6 +250,44 @@ class MyceliumNarma10App(QMainWindow):
         param_layout.addWidget(self.max_depth_spin, 11, 1)
         
         setup_layout.addWidget(param_group)
+        
+        # Extended Readout Settings (Advanced - at bottom to preserve layout)
+        extended_group = QGroupBox("Extended Readout Settings (Advanced)")
+        extended_layout = QGridLayout()
+        extended_group.setLayout(extended_layout)
+        
+        # Use state taps checkbox
+        extended_layout.addWidget(QLabel("Use State Taps:"), 0, 0)
+        self.use_state_taps_check = QCheckBox()
+        self.use_state_taps_check.setChecked(False)  # Default OFF - preserves baseline
+        extended_layout.addWidget(self.use_state_taps_check, 0, 1)
+        
+        # Number of state taps
+        extended_layout.addWidget(QLabel("Number of State Taps (L):"), 1, 0)
+        self.n_state_taps_spin = QSpinBox()
+        self.n_state_taps_spin.setRange(1, 50)
+        self.n_state_taps_spin.setValue(self.n_state_taps)
+        self.n_state_taps_spin.setSingleStep(1)
+        extended_layout.addWidget(self.n_state_taps_spin, 1, 1)
+        
+        # Input voltage range
+        extended_layout.addWidget(QLabel("Input Voltage Min (V):"), 2, 0)
+        self.input_v_min_spin = QDoubleSpinBox()
+        self.input_v_min_spin.setRange(0.0, 5.0)
+        self.input_v_min_spin.setValue(self.input_v_min)
+        self.input_v_min_spin.setSingleStep(0.1)
+        self.input_v_min_spin.setDecimals(1)
+        extended_layout.addWidget(self.input_v_min_spin, 2, 1)
+        
+        extended_layout.addWidget(QLabel("Input Voltage Max (V):"), 3, 0)
+        self.input_v_max_spin = QDoubleSpinBox()
+        self.input_v_max_spin.setRange(0.0, 5.0)
+        self.input_v_max_spin.setValue(self.input_v_max)
+        self.input_v_max_spin.setSingleStep(0.1)
+        self.input_v_max_spin.setDecimals(1)
+        extended_layout.addWidget(self.input_v_max_spin, 3, 1)
+        
+        setup_layout.addWidget(extended_group)
         
         # Run controls
         run_group = QGroupBox("Experiment Controls")
@@ -482,6 +526,28 @@ class MyceliumNarma10App(QMainWindow):
         error_msg = create_string_buffer(512)
         self.dwf.FDwfGetLastErrorMsg(error_msg)
         return error_msg.value.decode()
+    
+    def build_state_tap_matrix(self, x: np.ndarray, L: int) -> np.ndarray:
+        """
+        Build tapped delay matrix from state vector.
+        
+        Args:
+            x: State vector of shape (T,)
+            L: Number of taps (returns L+1 columns: x(t), x(t-1), ..., x(t-L))
+        
+        Returns:
+            Matrix of shape (T-L, L+1) with columns [x(t), x(t-1), ..., x(t-L)]
+        """
+        T = len(x)
+        if T <= L:
+            raise ValueError(f"State vector length {T} must be > {L} taps")
+        
+        # Create matrix with tapped delays
+        X_taps = np.zeros((T - L, L + 1))
+        for i in range(L + 1):
+            X_taps[:, i] = x[L - i:T - i]
+        
+        return X_taps
         
     def generate_narma10_data(self):
         """Generate NARMA-10 dataset"""
@@ -509,9 +575,9 @@ class MyceliumNarma10App(QMainWindow):
         
         return u, y
     
-    def scale_to_voltage(self, value, min_val=0, max_val=0.5, min_out=1.0, max_out=5.0):
-        """Scale normalized values to voltage range"""
-        return min_out + (value - min_val) * (max_out - min_out) / (max_val - min_val)
+    def scale_to_voltage(self, value, min_val=0, max_val=0.5):
+        """Scale normalized values to voltage range using configurable min/max"""
+        return self.input_v_min + (value - min_val) * (self.input_v_max - self.input_v_min) / (max_val - min_val)
     
     def set_input_voltages(self, input_value):
         """Set selected channels to represent NARMA input value"""
@@ -594,6 +660,11 @@ class MyceliumNarma10App(QMainWindow):
         self.ridge_fit_intercept = self.ridge_fit_intercept_check.isChecked()
         self.ridge_normalize = self.ridge_normalize_check.isChecked()
         self.ridge_solver = self.ridge_solver_combo.currentText()
+        # Extended readout params
+        self.use_state_taps = self.use_state_taps_check.isChecked()
+        self.n_state_taps = self.n_state_taps_spin.value()
+        self.input_v_min = self.input_v_min_spin.value()
+        self.input_v_max = self.input_v_max_spin.value()
         
     def start_training(self):
         """Begin NARMA-10 training"""
@@ -680,24 +751,63 @@ class MyceliumNarma10App(QMainWindow):
         self.is_training = False
         self.monitor_timer.stop()
         
-        # Train the model (skip washout period)
-        X_train = np.array(self.states[self.washout:])
-        y_train = np.array(self.targets[self.washout:])
+        # Calculate effective start considering both washout and taps
+        # ALIGNMENT LOGIC: effective_start ensures consistent slicing across X_train, y_train, X_test, y_test
+        # - Baseline mode (use_state_taps=False): effective_start = washout (no extra offset)
+        # - Tapped mode (use_state_taps=True): effective_start = max(washout, n_state_taps)
+        #   This ensures we drop enough samples for taps AND washout, maintaining alignment
+        effective_start = max(self.washout, self.n_state_taps if self.use_state_taps else 0)
         
-        # Make sure we have data
-        if len(X_train) == 0 or len(y_train) == 0:
-            self.status_label.setText("Error: No training data collected")
+        # Get states and targets after effective_start
+        states_full = np.array(self.states)
+        targets_full = np.array(self.targets)
+        
+        if len(states_full) <= effective_start:
+            self.status_label.setText(f"Error: Not enough data (need > {effective_start} samples)")
             self.train_btn.setEnabled(True)
             self.load_btn.setEnabled(True)
             return
         
-        # Create features with nonlinear transformations
-        X_features = np.column_stack([
-            X_train.reshape(-1, 1),                  # Original state
-            X_train.reshape(-1, 1)**2,               # Squared
-            np.sin(X_train.reshape(-1, 1) * 3),      # Sine transform
-            np.cos(X_train.reshape(-1, 1) * 2)       # Cosine transform
-        ])
+        # Build features based on mode
+        if self.use_state_taps:
+            # Extended readout: use tapped delays
+            # ALIGNMENT: build_state_tap_matrix returns shape (T-L, L+1) where row i corresponds to time i+L
+            # So X_taps[0] uses states[L:L+1], X_taps[1] uses states[L+1:L+2], etc.
+            # Therefore targets must start at index n_state_taps to align: y_train = targets[n_state_taps:]
+            X_taps = self.build_state_tap_matrix(states_full, self.n_state_taps)
+            # Targets align with taps (drop first n_state_taps samples)
+            y_train = targets_full[self.n_state_taps:]
+            # Apply washout by further slicing if washout > n_state_taps
+            if effective_start > self.n_state_taps:
+                washout_offset = effective_start - self.n_state_taps
+                X_taps = X_taps[washout_offset:]
+                y_train = y_train[washout_offset:]
+            
+            # For now, use linear taps only (can add nonlinear transforms later)
+            X_features = X_taps  # Shape: (T-L-washout_offset, L+1)
+        else:
+            # Baseline readout: original behavior (EXACTLY matches original code when use_state_taps=False)
+            # ALIGNMENT: When use_state_taps=False, effective_start = washout, so this is identical to original:
+            #   Original: X_train = self.states[self.washout:], y_train = self.targets[self.washout:]
+            #   This code: X_train = states_full[washout:], y_train = targets_full[washout:]
+            # Features are built EXACTLY as before: [state, state², sin(3*state), cos(2*state)]
+            X_train = states_full[effective_start:]
+            y_train = targets_full[effective_start:]
+            
+            # Create features with nonlinear transformations (baseline)
+            X_features = np.column_stack([
+                X_train.reshape(-1, 1),                  # Original state
+                X_train.reshape(-1, 1)**2,               # Squared
+                np.sin(X_train.reshape(-1, 1) * 3),      # Sine transform
+                np.cos(X_train.reshape(-1, 1) * 2)       # Cosine transform
+            ])
+        
+        # Make sure we have data
+        if len(X_features) == 0 or len(y_train) == 0:
+            self.status_label.setText("Error: No training data collected")
+            self.train_btn.setEnabled(True)
+            self.load_btn.setEnabled(True)
+            return
         
         # Train Ridge Regression model with optional normalization
         if self.ridge_normalize:
@@ -807,24 +917,46 @@ class MyceliumNarma10App(QMainWindow):
             self.status_label.setText(f"Error reading voltage at step {self.current_step}")
             return
         
-        # Create features with nonlinear transformations (same as in training)
-        features = np.array([
-            state,
-            state**2,
-            np.sin(state * 3),
-            np.cos(state * 2)
-        ]).reshape(1, -1)
-        
-        # Make predictions
-        rf_pred = self.rf_model.predict(features)[0]
-        ridge_pred = self.ridge_model.predict(features)[0]
-        
-        # Store data
+        # Store data (we'll make predictions after collecting all states if using taps)
         self.inputs.append(input_val)
         self.states.append(state)
         self.targets.append(self.test_targets[self.current_step])
-        self.rf_predictions.append(rf_pred)
-        self.ridge_predictions.append(ridge_pred)
+        
+        # For baseline mode, make prediction immediately
+        # For tapped mode, we need to wait until we have enough states
+        if not self.use_state_taps:
+            # Baseline: create features with nonlinear transformations (same as in training)
+            features = np.array([
+                state,
+                state**2,
+                np.sin(state * 3),
+                np.cos(state * 2)
+            ]).reshape(1, -1)
+            
+            # Make predictions
+            rf_pred = self.rf_model.predict(features)[0]
+            ridge_pred = self.ridge_model.predict(features)[0]
+            
+            self.rf_predictions.append(rf_pred)
+            self.ridge_predictions.append(ridge_pred)
+        else:
+            # Tapped mode: need at least n_state_taps+1 states to make first prediction
+            if len(self.states) > self.n_state_taps:
+                # Build tapped delay feature
+                states_array = np.array(self.states)
+                tap_features = self.build_state_tap_matrix(states_array, self.n_state_taps)
+                # Use the most recent tap vector
+                features = tap_features[-1:].reshape(1, -1)
+                
+                rf_pred = self.rf_model.predict(features)[0]
+                ridge_pred = self.ridge_model.predict(features)[0]
+                
+                self.rf_predictions.append(rf_pred)
+                self.ridge_predictions.append(ridge_pred)
+            else:
+                # Not enough states yet, append placeholder
+                self.rf_predictions.append(0.0)
+                self.ridge_predictions.append(0.0)
         
         # Update progress
         self.current_step += 1
@@ -845,16 +977,77 @@ class MyceliumNarma10App(QMainWindow):
         self.is_testing = False
         self.monitor_timer.stop()
         
-        # Calculate test RMSE
+        # Calculate effective start considering both washout and taps
+        # ALIGNMENT LOGIC: Same effective_start as training ensures predictions[i] aligns with targets[i]
+        # - Baseline mode: predictions start at index=washout, align with targets[washout:]
+        # - Tapped mode: first n_state_taps predictions are placeholders (0.0), real predictions start at n_state_taps
+        #   effective_start = max(washout, n_state_taps) ensures we evaluate only valid aligned pairs
+        effective_start = max(self.washout, self.n_state_taps if self.use_state_taps else 0)
+        
+        # Calculate test metrics only on valid segment (after effective_start)
         if len(self.rf_predictions) > 0 and len(self.targets) > 0 and len(self.ridge_predictions) > 0:
-            self.rf_test_rmse = np.sqrt(mean_squared_error(self.targets, self.rf_predictions))
-            self.ridge_test_rmse = np.sqrt(mean_squared_error(self.targets, self.ridge_predictions))
+            # Extract valid segment - predictions and targets are aligned at indices >= effective_start
+            if effective_start > 0 and effective_start < len(self.targets):
+                y_true_valid = np.array(self.targets[effective_start:])
+                rf_pred_valid = np.array(self.rf_predictions[effective_start:])
+                ridge_pred_valid = np.array(self.ridge_predictions[effective_start:])
+            else:
+                # No washout/taps needed, use all data
+                y_true_valid = np.array(self.targets)
+                rf_pred_valid = np.array(self.rf_predictions)
+                ridge_pred_valid = np.array(self.ridge_predictions)
+            
+            # Calculate RMSE
+            self.rf_test_rmse = np.sqrt(mean_squared_error(y_true_valid, rf_pred_valid))
+            self.ridge_test_rmse = np.sqrt(mean_squared_error(y_true_valid, ridge_pred_valid))
+            
+            # Calculate NRMSE (normalized by target std)
+            target_std = np.std(y_true_valid)
+            self.rf_test_nrmse = self.rf_test_rmse / target_std if target_std > 0 else np.inf
+            self.ridge_test_nrmse = self.ridge_test_rmse / target_std if target_std > 0 else np.inf
+            
+            # Calculate R2
+            self.rf_test_r2 = r2_score(y_true_valid, rf_pred_valid)
+            self.ridge_test_r2 = r2_score(y_true_valid, ridge_pred_valid)
+            
+            # Calculate baseline predictor RMSE (mean of training target)
+            # Use training targets after effective_start for baseline
+            train_targets_valid = np.array(self.all_targets[:self.train_len])
+            if effective_start < len(train_targets_valid):
+                baseline_mean = np.mean(train_targets_valid[effective_start:])
+            else:
+                baseline_mean = np.mean(train_targets_valid)
+            baseline_pred = np.full_like(y_true_valid, baseline_mean)
+            self.baseline_test_rmse = np.sqrt(mean_squared_error(y_true_valid, baseline_pred))
+            
+            # Store metrics for CSV output
+            self.test_metrics = {
+                'dt': self.delay_ms,
+                'washout': self.washout,
+                'n_state_taps': self.n_state_taps,
+                'use_state_taps': self.use_state_taps,
+                'input_v_min': self.input_v_min,
+                'input_v_max': self.input_v_max,
+                'ridge_rmse': self.ridge_test_rmse,
+                'ridge_nrmse': self.ridge_test_nrmse,
+                'ridge_r2': self.ridge_test_r2,
+                'rf_rmse': self.rf_test_rmse,
+                'rf_nrmse': self.rf_test_nrmse,
+                'rf_r2': self.rf_test_r2,
+                'baseline_rmse': self.baseline_test_rmse
+            }
             
             # Update UI
             self.status_label.setText("Testing completed")
-            self.rmse_label.setText(f"Test RMSE - Ridge: {self.ridge_test_rmse:.6f} | RF: {self.rf_test_rmse:.6f}")
+            self.rmse_label.setText(
+                f"Test RMSE - Ridge: {self.ridge_test_rmse:.6f} | RF: {self.rf_test_rmse:.6f} | "
+                f"Baseline: {self.baseline_test_rmse:.6f}"
+            )
             
             print(f"Testing completed. Ridge RMSE: {self.ridge_test_rmse:.6f}, RF RMSE: {self.rf_test_rmse:.6f}")
+            print(f"Ridge NRMSE: {self.ridge_test_nrmse:.6f}, R2: {self.ridge_test_r2:.6f}")
+            print(f"RF NRMSE: {self.rf_test_nrmse:.6f}, R2: {self.rf_test_r2:.6f}")
+            print(f"Baseline RMSE: {self.baseline_test_rmse:.6f}")
             
             # Final plot update (show both predictions)
             self.plot_canvas.update_plots(
@@ -874,6 +1067,9 @@ class MyceliumNarma10App(QMainWindow):
             self.update_analysis_tab()
         else:
             self.status_label.setText("Error: No test data collected")
+            # Initialize empty metrics to avoid errors
+            if not hasattr(self, 'test_metrics'):
+                self.test_metrics = {}
         
         # Re-enable buttons
         self.train_btn.setEnabled(True)
@@ -988,14 +1184,20 @@ class MyceliumNarma10App(QMainWindow):
             print(f"Error loading model: {str(e)}")
     
     def save_results(self):
-        """Save testing results to CSV"""
+        """Save testing results to CSV with metadata"""
         if len(self.inputs) == 0 or len(self.rf_predictions) == 0 or len(self.ridge_predictions) == 0:
             return
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"narma10_results_{timestamp}.csv"
+        
+        # Generate filename based on mode
+        if self.use_state_taps:
+            filename = f"narma10_results_{timestamp}_tapsL{self.n_state_taps}.csv"
+        else:
+            filename = f"narma10_results_{timestamp}_baseline.csv"
         
         try:
+            # Prepare data array
             data = np.column_stack((
                 self.inputs,
                 self.states,
@@ -1004,17 +1206,42 @@ class MyceliumNarma10App(QMainWindow):
                 self.ridge_predictions
             ))
             
-            np.savetxt(
-                filename, 
-                data, 
-                delimiter=',', 
-                header='input,state,target,rf_prediction,ridge_prediction',
-                comments=''
-            )
+            # Write file with metadata header if available
+            with open(filename, 'w') as f:
+                # Write metadata as comments if available
+                if hasattr(self, 'test_metrics'):
+                    metrics = self.test_metrics
+                    metadata_lines = [
+                        f"# NARMA-10 Test Results",
+                        f"# Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                        f"# dt (ms): {metrics['dt']}",
+                        f"# washout: {metrics['washout']}",
+                        f"# n_state_taps: {metrics['n_state_taps']}",
+                        f"# use_state_taps: {metrics['use_state_taps']}",
+                        f"# input_v_min: {metrics['input_v_min']}",
+                        f"# input_v_max: {metrics['input_v_max']}",
+                        f"# Ridge RMSE: {metrics['ridge_rmse']:.6f}",
+                        f"# Ridge NRMSE: {metrics['ridge_nrmse']:.6f}",
+                        f"# Ridge R2: {metrics['ridge_r2']:.6f}",
+                        f"# RF RMSE: {metrics['rf_rmse']:.6f}",
+                        f"# RF NRMSE: {metrics['rf_nrmse']:.6f}",
+                        f"# RF R2: {metrics['rf_r2']:.6f}",
+                        f"# Baseline RMSE: {metrics['baseline_rmse']:.6f}",
+                    ]
+                    for line in metadata_lines:
+                        f.write(line + '\n')
+                
+                # Write header
+                f.write('input,state,target,rf_prediction,ridge_prediction\n')
+                
+                # Write data
+                np.savetxt(f, data, delimiter=',', fmt='%.6f')
             
             print(f"Results saved to {filename}")
         except Exception as e:
             print(f"Error saving results: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     def save_training_data(self):
         """Save training data to CSV"""
