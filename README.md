@@ -2,7 +2,7 @@
 
 We introduce a neuromorphic computing substrate based on PEDOT:PSS-infused mycelium, a biofabricated, morphologically tunable material that can be engineered into electrically active components including resistors, capacitors, and diode-like elements. Leveraging the principles of physical reservoir computing, we demonstrate that mycelium networks grown under controlled environmental conditions can transform time-varying inputs into nonlinear, high-dimensional state trajectories, enabling machine learning tasks such as NARMA-10 sequence prediction.
 
-*For detailed experimental methods and results, see the primary research paper: `telhan_morph_tuned_mycelium_chip_Aug4.pdf`* 
+*For detailed experimental methods and results, see the primary research paper: [Morphologically Tunable Mycelium Chips for Physical Reservoir Computing](https://www.biorxiv.org/content/10.1101/2025.08.20.671348v1) (bioRxiv, 2025)* 
 
 ## Overview
 
@@ -50,8 +50,7 @@ NeuromorphicMyceliumChip/
 ├── run_narma10.sh               # NARMA-10 experiment launcher
 ├── run_memory_test.sh           # Memory test launcher
 ├── check_digilent_setup.sh     # Device diagnostic script
-├── test_device_access.py        # Device connectivity test
-└── telhan_morph_tuned_mycelium_chip_Aug4.pdf  # Primary research paper
+└── test_device_access.py        # Device connectivity test
 ```
 
 ## 🚀 Quick Start
@@ -135,7 +134,7 @@ We evaluated the mycelium substrate using the standard NARMA-10 benchmark task u
 
 - **Sampling interval:** dt = 300 ms (3.33 Hz)
 - **Input range:** 1–4 V control (mapped to nonlinear substrate bias regime)
-- **Training samples:** 500–1,000 per run
+- **Training samples:** 1,000 per run
 - **Readout:** Ridge regression
 - **Feature set:**  
   - Raw reservoir state  
@@ -246,11 +245,11 @@ These measurements reflect prototype interface energy rather than optimized subs
 
 ### NARMA-10 Training
 1. Generate 1,000 NARMA-10 training samples
-2. Apply voltage signals (0-5V range) to 3 reservoirs (A1, A4, A6)
-3. Record mycelium state responses from summed output channels
-4. Create feature representations (raw state, squared state, trigonometric expansions)
-5. Train Ridge regression and Random Forest models
-6. Evaluate prediction performance across multiple experiments
+2. Apply voltage signals (1–4 V control range, mapped to nonlinear substrate bias regime) to 3 reservoirs (A1, A4, A6)
+3. Record mycelium state responses from summed output channels at 300 ms sampling intervals (3.33 Hz)
+4. Create feature representations (raw state, squared state, trigonometric expansions: sin(3·state), cos(2·state))
+5. Train Ridge regression model
+6. Evaluate prediction performance across multiple independent experimental runs
 
 
 
@@ -272,7 +271,7 @@ This project demonstrates that mycelium networks can serve as effective substrat
 ## 📚 References
 
 ### Primary Research Paper
-- **Telhan, O. et al.** (2025). Morphologically Tuned Mycelium Chip for Neuromorphic Computing. *Available in this repository as* `telhan_morph_tuned_mycelium_chip_Aug4.pdf`
+- **Telhan, O. et al.** (2025). Morphologically Tunable Mycelium Chips for Physical Reservoir Computing. *bioRxiv* [https://www.biorxiv.org/content/10.1101/2025.08.20.671348v1](https://www.biorxiv.org/content/10.1101/2025.08.20.671348v1)
 
 ### Background Literature
 - Reservoir Computing principles
