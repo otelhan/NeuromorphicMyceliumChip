@@ -32,17 +32,25 @@ NeuromorphicMyceliumChip/
 │   ├── mycelium_narma10.py      # NARMA-10 reservoir computing
 │   ├── mycelium_memory_test.py  # Memory analysis tools
 │   └── cleanup_devices.py       # Device management utilities
-├── data/                         # Sample data files
-│   ├── sample_narma_results.csv # NARMA-10 experimental results
-│   ├── narma10_results_*.csv    # Multiple NARMA-10 test runs
-│   ├── memory_test_step_response_test_*.csv # Step response data
-│   ├── memory_test_random_input_*.csv # Random input memory data
-│   └── memory_test_sine_wave_test_*.csv # Sine wave memory data
-├── docs/                         # Documentation
-├── tests/                        # Test files
-├── examples/                     # Usage examples
+├── data/                         # Experimental data
+│   ├── Original Submission (Aug 4)/
+│   │   ├── NARMA-10 data/       # Original NARMA-10 training data
+│   │   ├── Memory test data/    # Original memory characterization
+│   │   └── *.csv                 # Summary data files
+│   └── Peer-Review Revision (Feb 22)/
+│       ├── Feb 14 Memory Test - k10 (Chip 39)/
+│       ├── Feb 14 Step Test (Chip 39)/
+│       ├── Feb 15 Tests (Chips 43 and 47)/
+│       ├── Feb 17 Power Consumption Test (Chip 39)/
+│       ├── Feb 20 Sine & Step tests (Chip 39)/
+│       ├── MC Random Input Comparison ( Chips 39  43 47)/
+│       └── Table 1 revision/
+├── images/                       # Figures and diagrams
 ├── requirements.txt              # Python dependencies
-├── run_predictor.sh             # Environment setup script
+├── run_narma10.sh               # NARMA-10 experiment launcher
+├── run_memory_test.sh           # Memory test launcher
+├── check_digilent_setup.sh     # Device diagnostic script
+├── test_device_access.py        # Device connectivity test
 └── telhan_morph_tuned_mycelium_chip_Aug4.pdf  # Primary research paper
 ```
 
@@ -70,21 +78,19 @@ pip install -r requirements.txt
 ```bash
 # Install Digilent WaveForms from https://digilent.com/reference/software/waveforms/
 # Connect your Digilent devices
-chmod +x run_predictor.sh
+chmod +x run_narma10.sh run_memory_test.sh check_digilent_setup.sh
 ```
 
 ### Running Experiments
 
 #### NARMA-10 Reservoir Computing
 ```bash
-./run_predictor.sh src/mycelium_narma10.py
+./run_narma10.sh
 ```
-
-
 
 #### Memory Analysis
 ```bash
-./run_predictor.sh src/mycelium_memory_test.py
+./run_memory_test.sh
 ```
 
 ## 🔧 Hardware Requirements
@@ -104,58 +110,124 @@ chmod +x run_predictor.sh
 
 ## 📊 Results
 
-### Available Experimental Data
-The repository includes comprehensive experimental data from our neuromorphic mycelium computing experiments:
+## Available Experimental Data
 
-**NARMA-10 Data:**
-- `narma10_results_*.csv`: Multiple test runs with input, state, target, and prediction columns
-- Contains 200+ samples per experiment with Ridge and Random Forest predictions
+This repository includes experimental datasets underlying the published neuromorphic mycelium chip study, including:
 
-**Memory Characterization Data:**
-- `memory_test_step_response_test_*.csv`: Step input response data (time, input, state)
-- `memory_test_random_input_*.csv`: Random pulse input memory data
-- `memory_test_sine_wave_test_*.csv`: Sine wave input temporal dynamics
+**NARMA-10 Reservoir Computing**
+- `narma10_results_*.csv`: Input, reservoir state, target output, and model predictions
+- Ridge regression readout with nonlinear feature expansion
+- Multiple independent experimental runs
 
-**Data Format:**
-- All CSV files include timestamps, input signals, and mycelium state responses
-- NARMA-10 files include both true targets and model predictions
-- Memory test files contain time-series data for temporal analysis
+**Temporal Memory Characterization**
+- `memory_test_step_response_test_*.csv`: Step-response dynamics (time, input, state)
+- `memory_test_random_input_*.csv`: Random input stimulation
+- `memory_test_sine_wave_test_*.csv`: Sinusoidal drive experiments
+- Lag-resolved memory capacity analysis
 
-### NARMA-10 Performance
-- **Training Samples**: 500 and 1,000 samples per model
-- **Test Performance**: Multiple independent test experiments
-- **Model Optimization**: Multiple iterations with parameter tuning
-- **Results**: 
-  - **Ridge Regression**: RMSE 0.102-0.106 (NRMSE 1.01-1.07)
-  - **Random Forest**: Training RMSE 0.096, Test RMSE 0.197
-- **Method**: Ridge regression with normalization and Random Forest with nonlinear feature transformations
-- **Features**: Reservoir state, squared state, and trigonometric expansions (sin(state×3), cos(state×2))
-- **Hardware**: 3 reservoirs (locations A1, A4, A6) across 1 chip
-- **Note**: First demonstration of temporal computing in biodegradable, agriculturally scalable substrate
+All datasets contain timestamped voltage inputs and corresponding reservoir state measurements recorded from PEDOT:PSS-infused mycelium substrates.
 
+---
 
+## NARMA-10 Reservoir Performance
 
-### Memory Characterization
-- **Temporal Memory**: R² improvement of 0.026-0.034 with historical inputs
-- **Response Dynamics**: Step response, autocorrelation, and cross-correlation analysis
-- **State Prediction**: Predictive modeling with input history
-- **Settling Time**: 0.1-1s
-- **Input Types**: Step signals, random pulses, and sine waves
-- **Hardware**: 3 reservoirs tested across multiple input patterns
+We evaluated the mycelium substrate using the standard NARMA-10 benchmark task under the following conditions:
 
-#### Detailed Memory Results
-**Step Input**: 
-- Autocorrelation: 0.85 (lag=6s), Cross-correlation: 1.0 (lag=0s)
-- R²: 0.74 (no improvement with history)
-- Settling time: 0.6s
+- **Sampling interval:** dt = 300 ms (3.33 Hz)
+- **Input range:** 1–4 V control (mapped to nonlinear substrate bias regime)
+- **Training samples:** 500–1,000 per run
+- **Readout:** Ridge regression
+- **Feature set:**  
+  - Raw reservoir state  
+  - Squared state  
+  - `sin(3·state)`  
+  - `cos(2·state)`
 
-**Random Input (1.1-3.49V)**:
-- Autocorrelation: 0.20 (lag=0.3s), Cross-correlation: 1.0 (lag=0s)
-- R² improvement: 0.577 → 0.611 (+0.034)
+### Performance (Chip #39 baseline)
 
-**Sine Wave Input (1.2-3.5V)**:
-- Autocorrelation: 0.497 (lag=1s), Cross-correlation: 0.689 (lag=1s)
-- R² improvement: 0.4745 → 0.5005 (+0.026)
+- **RMSE:** 0.102–0.106  
+- **NRMSE:** 1.01–1.07  
+
+Performance was reproducible across repeated runs using identical hardware and stimulation settings.
+
+While absolute accuracy is modest relative to optimized electronic reservoirs, these results demonstrate that a biodegradable, morphologically engineered substrate can support nonlinear temporal transformation and short-horizon memory sufficient for NARMA-10 reconstruction.
+
+The reported performance reflects:
+- Limited linear memory capacity (MC ≤ 0.21)
+- Single-scalar readout aggregation
+- Moderate signal-to-noise ratio (5–8 dB)
+
+This benchmark establishes proof-of-concept temporal computing in a biologically grown, biodegradable substrate.
+
+---
+
+## Memory Capacity and Temporal Dynamics
+
+### Linear Memory Capacity (MC)
+
+Lag-resolved linear memory capacity was measured up to K = 10 (3 s lookback) across three independently fabricated chips:
+
+- **Chip #39:** 0.209 ± 0.067  
+- **Chip #47:** 0.052 ± 0.023  
+- **Chip #43:** 0.048 ± 0.016  
+
+Each value represents mean ± SD across five independent runs (n = 5 per chip).
+
+All devices exhibit:
+
+- Monotonic MC decay with increasing lag  
+- Finite fading-memory behavior  
+- Preserved decay structure across morphologies  
+
+Normalized MC curves confirm conserved temporal decay profiles despite amplitude scaling differences.
+
+---
+
+### Step-Response Dynamics
+
+Repeated step-response measurements (n = 5 per chip) demonstrate:
+
+- Fast initial relaxation within ~1–2 sampling intervals  
+- Sub-second effective response channel  
+- Superimposed slower drift component  
+- Negligible within-session drift (~10⁻⁶ V/s)
+
+Signal-to-noise ratio (SNR), computed from plateau amplitude relative to steady-state noise:
+
+- **Chip #39:** 5.1 ± 0.15 dB  
+- **Chip #47:** 8.0 ± 0.25 dB  
+- **Chip #43:** 7.8 ± 0.32 dB  
+
+These results confirm reproducible short-term temporal dynamics across independently grown substrates.
+
+---
+
+## Session-to-Session Stability (Chip #39)
+
+Lag-resolved memory capacity was re-measured approximately eight months after initial characterization.
+
+Key observations:
+
+- Preserved fading-memory structure  
+- Redistribution of lag weighting toward k = 1  
+- Stable total memory magnitude within expected variability  
+
+This indicates that substrate-level temporal behavior is stable over extended ambient storage under controlled laboratory reactivation.
+
+---
+
+## Board-Level Energy (Prototype Interface)
+
+During random-input memory testing:
+
+- **Supply voltage:** 24 V  
+- **Mean current:** ~0.113 A  
+- **Board-level power:** ~2.7 W  
+- **Energy per sample:** ~0.81 J/sample  
+
+Power consumption is dominated by high-voltage analog conditioning electronics (OPA552/OPA454 chain), not intrinsic substrate dissipation.
+
+These measurements reflect prototype interface energy rather than optimized substrate-level energy scaling.
 
 ## 🛠️ Technical Details
 
